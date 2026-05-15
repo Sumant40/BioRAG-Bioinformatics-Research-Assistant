@@ -2,7 +2,7 @@
 
 > A production-ready Retrieval-Augmented Generation (RAG) system for bioinformatics research. Query PubMed literature, UniProt protein databases, and KEGG pathways using natural language — powered by an agentic AI pipeline with grounded, cited answers.
 
-![BioRAG Frontend](results\image.jpeg)
+![BioRAG Frontend displaying a conversation with the BioRAG bioinformatics research assistant. The interface has a dark theme with a left sidebar showing ingestion options for PubMed search queries, max results selector set to 10 papers, and an Ingest Papers button. Quick queries are listed below including BRCA1 DNA repair mechanisms, EGFR mutations in lung cancer, CRISPR off-target effects, and tumor microenvironment topics. The main panel shows a researcher asking What is the role of BRCA1 in DNA repair? with BioRAG providing a detailed, citation-rich response explaining BRCA1's role in homologous recombination, genomic stability, and breast cancer development, with multiple PubMed IDs (PMIDs) linked inline. The response is professional and informative, conveying expertise and scientific rigor. At the bottom, a new query prompt asks about EGFR mutations in lung cancer treatment response. The interface shows 50 chunks indexed and connected status indicator in the top right corner.](results/image.png)
 
 ---
 
