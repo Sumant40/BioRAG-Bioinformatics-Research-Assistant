@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BioRAG — Bioinformatics Research Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0f0d;
+    --bg2: #111a14;
+    --bg3: #182019;
+    --panel: #1a2a1c;
+    --border: #2a3d2c;
+    --border2: #3a5a3c;
+    --accent: #4ade80;
+    --accent2: #86efac;
+    --accent-dim: #1a4a2a;
+    --text: #e8f5e9;
+    --text2: #a8c5aa;
+    --text3: #6a8a6c;
+    --danger: #f87171;
+    --warn: #fbbf24;
+    --mono: 'DM Mono', monospace;
+    --serif: 'Instrument Serif', serif;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    grid-template-rows: 60px 1fr;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,15,13,0.95);
+    backdrop-filter: blur(12px);
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-icon {
+    width: 28px; height: 28px;
+    background: var(--accent);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+
+  .logo-text {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: -0.3px;
+  }
+
+  .logo-sub {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 1px;
+  }
+
+  .header-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--danger);
+    box-shadow: 0 0 8px var(--danger);
+    transition: all 0.3s;
+  }
+  .status-dot.connected {
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .status-text {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+  }
+
+  .chunks-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: var(--accent-dim);
+    color: var(--accent2);
+    border: 1px solid var(--border2);
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  /* ── SIDEBAR ── */
+  aside {
+    border-right: 1px solid var(--border);
+    background: var(--bg2);
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    overflow-y: auto;
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  /* Ingest panel */
+  .ingest-panel {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+
+  .ingest-panel input, .ingest-panel select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .ingest-panel input:focus, .ingest-panel select:focus {
+    border-color: var(--accent);
+  }
+  .ingest-panel input::placeholder { color: var(--text3); }
+
+  .ingest-panel label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-primary {
+    width: 100%;
+    background: var(--accent);
+    color: #0a0f0d;
+    border: none;
+    border-radius: 6px;
+    padding: 9px 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Quick queries */
+  .quick-query {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 9px 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+    width: 100%;
+    line-height: 1.4;
+    margin-bottom: 6px;
+  }
+  .quick-query:hover {
+    border-color: var(--accent);
+    color: var(--accent2);
+    background: var(--accent-dim);
+  }
+
+  /* Ingest history */
+  .history-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    margin-bottom: 6px;
+  }
+  .history-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+  .history-text {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* ── MAIN ── */
+  main {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 60px);
+    overflow: hidden;
+  }
+
+  /* Chat area */
+  .chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* Welcome screen */
+  .welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    text-align: center;
+    gap: 16px;
+    padding: 60px 0;
+  }
+
+  .welcome-title {
+    font-family: var(--serif);
+    font-size: 42px;
+    font-style: italic;
+    color: var(--text);
+    line-height: 1.1;
+  }
+
+  .welcome-title span { color: var(--accent); }
+
+  .welcome-sub {
+    font-size: 14px;
+    color: var(--text3);
+    max-width: 420px;
+    line-height: 1.7;
+    font-weight: 300;
+  }
+
+  .welcome-hint {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 8px 16px;
+    border-radius: 20px;
+    margin-top: 8px;
+  }
+
+  /* Messages */
+  .msg {
+    display: flex;
+    gap: 14px;
+    animation: fadeUp 0.3s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg-avatar {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .msg.user .msg-avatar {
+    background: var(--accent-dim);
+    border: 1px solid var(--border2);
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .msg.assistant .msg-avatar {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--accent2);
+  }
+
+  .msg-body { flex: 1; min-width: 0; }
+
+  .msg-role {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .msg-text {
+    font-size: 14px;
+    line-height: 1.75;
+    color: var(--text);
+    font-weight: 300;
+  }
+
+  .msg.user .msg-text {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text2);
+  }
+
+  /* Answer styling */
+  .answer-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .answer-content {
+    padding: 18px 20px;
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--text);
+    font-weight: 300;
+  }
+
+  .answer-content strong { color: var(--accent2); font-weight: 500; }
+
+  /* PMID citations */
+  .answer-content .cite {
+    display: inline-block;
+    background: var(--accent-dim);
+    color: var(--accent2);
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 1px 6px;
+    margin: 0 2px;
+    vertical-align: middle;
+  }
+
+  /* Sources */
+  .sources-bar {
+    border-top: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .sources-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-right: 4px;
+  }
+
+  .source-chip {
+    font-family: var(--mono);
+    font-size: 10px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text3);
+    padding: 3px 9px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    overflow: hidden;
+    max-width: 200px;
+    text-overflow: ellipsis;
+  }
+  .source-chip:hover {
+    border-color: var(--accent);
+    color: var(--accent2);
+  }
+
+  /* Meta bar */
+  .meta-bar {
+    border-top: 1px solid var(--border);
+    padding: 8px 20px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .meta-item {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .meta-item .val { color: var(--accent2); }
+
+  .tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    border: 1px solid;
+  }
+  .tag.live {
+    color: var(--warn);
+    border-color: rgba(251,191,36,0.3);
+    background: rgba(251,191,36,0.08);
+  }
+  .tag.kb {
+    color: var(--accent2);
+    border-color: var(--border2);
+    background: var(--accent-dim);
+  }
+
+  /* Loading */
+  .loading-msg {
+    display: flex;
+    gap: 14px;
+    animation: fadeUp 0.3s ease;
+  }
+
+  .typing {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    padding: 14px 18px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  .typing span {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: blink 1.2s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes blink {
+    0%,80%,100% { opacity: 0.2; transform: scale(0.8); }
+    40% { opacity: 1; transform: scale(1); }
+  }
+
+  /* Error */
+  .error-card {
+    background: rgba(248,113,113,0.08);
+    border: 1px solid rgba(248,113,113,0.3);
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--danger);
+  }
+
+  /* ── INPUT BAR ── */
+  .input-bar {
+    border-top: 1px solid var(--border);
+    background: var(--bg2);
+    padding: 16px 40px 20px;
+  }
+
+  .input-wrap {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    transition: border-color 0.2s;
+  }
+  .input-wrap:focus-within { border-color: var(--accent); }
+
+  #query-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 300;
+    resize: none;
+    line-height: 1.6;
+    max-height: 120px;
+    min-height: 22px;
+  }
+  #query-input::placeholder { color: var(--text3); }
+
+  .send-btn {
+    width: 34px; height: 34px;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    color: #0a0f0d;
+  }
+  .send-btn:hover { background: var(--accent2); transform: scale(1.05); }
+  .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .input-hint {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    margin-top: 8px;
+    text-align: center;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* Ingest result toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--panel);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent2);
+    z-index: 1000;
+    animation: slideIn 0.3s ease;
+    max-width: 300px;
+  }
+  .toast.error { color: var(--danger); border-color: rgba(248,113,113,0.4); }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Progress bar */
+  .progress-bar {
+    height: 2px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 10px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.3s;
+    width: 0%;
+  }
+
+  /* Source modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 500px;
+    width: 90%;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .modal-title {
+    font-size: 14px;
+    color: var(--accent2);
+    margin-bottom: 16px;
+    font-weight: 500;
+  }
+  .modal-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+    color: var(--text2);
+  }
+  .modal-key { color: var(--text3); min-width: 80px; }
+  .modal-close {
+    margin-top: 16px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    border-radius: 6px;
+    padding: 7px 14px;
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 11px;
+    transition: border-color 0.2s;
+  }
+  .modal-close:hover { border-color: var(--accent); color: var(--accent2); }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🧬</div>
+      <div>
+        <div class="logo-text">BioRAG</div>
+        <div class="logo-sub">Bioinformatics Research Assistant</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <span class="chunks-badge" id="chunks-badge">0 chunks indexed</span>
+      <div class="status-dot" id="status-dot"></div>
+      <span class="status-text" id="status-text">disconnected</span>
+    </div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <aside>
+
+    <!-- Ingest -->
+    <div>
+      <div class="section-label">Ingest Data</div>
+      <div class="ingest-panel">
+        <label>PubMed Search Query</label>
+        <input type="text" id="ingest-query" placeholder="e.g. BRCA1 breast cancer" value="BRCA1 breast cancer DNA repair"/>
+
+        <label>Max Results</label>
+        <select id="ingest-max">
+          <option value="10">10 papers</option>
+          <option value="25" selected>25 papers</option>
+          <option value="50">50 papers</option>
+          <option value="100">100 papers</option>
+        </select>
+
+        <button class="btn-primary" id="ingest-btn" onclick="ingestData()">
+          <span id="ingest-btn-text">⬆ Ingest Papers</span>
+        </button>
+        <div class="progress-bar" id="progress-bar">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Queries -->
+    <div>
+      <div class="section-label">Quick Queries</div>
+      <button class="quick-query" onclick="setQuery('What is the role of BRCA1 in DNA double-strand break repair?')">BRCA1 DNA repair mechanisms</button>
+      <button class="quick-query" onclick="setQuery('How do EGFR mutations affect lung cancer treatment response?')">EGFR mutations in lung cancer</button>
+      <button class="quick-query" onclick="setQuery('What are CRISPR off-target effects in clinical trials?')">CRISPR off-target effects</button>
+      <button class="quick-query" onclick="setQuery('Explain the tumor microenvironment and immunotherapy resistance')">Tumor microenvironment</button>
+      <button class="quick-query" onclick="setQuery('What genes are associated with hereditary colorectal cancer?')">Hereditary colorectal cancer genes</button>
+    </div>
+
+    <!-- Ingest History -->
+    <div>
+      <div class="section-label">Ingestion Log</div>
+      <div id="history-list">
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text3)">No data ingested yet.</div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- MAIN -->
+  <main>
+    <div class="chat-area" id="chat-area">
+      <div class="welcome" id="welcome">
+        <div class="welcome-title">Query the<br/><span>genome</span>.</div>
+        <div class="welcome-sub">
+          Ingest PubMed literature from the sidebar, then ask any bioinformatics research question. Answers are grounded in real papers with citations.
+        </div>
+        <div class="welcome-hint">↙ Start by ingesting papers, then ask a question below</div>
+      </div>
+    </div>
+
+    <div class="input-bar">
+      <div class="input-wrap">
+        <textarea id="query-input" rows="1" placeholder="Ask a bioinformatics question... (e.g. What are BRCA2 mutation consequences?)"
+          onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="send-btn" id="send-btn" onclick="sendQuery()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+      <div class="input-hint">Enter to send · Shift+Enter for new line · Answers grounded in indexed literature</div>
+    </div>
+  </main>
+
+</div>
+
+<!-- Source Modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-title">📄 Source Details</div>
+    <div id="modal-content"></div>
+    <button class="modal-close" onclick="document.getElementById('modal-overlay').classList.remove('open')">Close</button>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:8000';
+let isLoading = false;
+
+// ── Health check on load ──
+async function checkHealth() {
+  try {
+    const r = await fetch(`${API}/health`);
+    if (r.ok) {
+      const data = await r.json();
+      document.getElementById('status-dot').classList.add('connected');
+      document.getElementById('status-text').textContent = 'connected';
+      document.getElementById('chunks-badge').textContent = `${data.chunks_indexed} chunks indexed`;
+    }
+  } catch {
+    document.getElementById('status-text').textContent = 'offline';
+  }
+}
+checkHealth();
+setInterval(checkHealth, 10000);
+
+// ── Ingest ──
+async function ingestData() {
+  const query = document.getElementById('ingest-query').value.trim();
+  const maxResults = parseInt(document.getElementById('ingest-max').value);
+  if (!query) return showToast('Enter a PubMed search query', true);
+
+  const btn = document.getElementById('ingest-btn');
+  const btnText = document.getElementById('ingest-btn-text');
+  const fill = document.getElementById('progress-fill');
+
+  btn.disabled = true;
+  btnText.textContent = '⏳ Ingesting...';
+  fill.style.width = '30%';
+
+  try {
+    fill.style.width = '60%';
+    const r = await fetch(`${API}/ingest/pubmed`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({pubmed_query: query, max_results: maxResults})
+    });
+
+    fill.style.width = '100%';
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+
+    showToast(`✓ Ingested ${data.ingested_records} papers → ${data.chunks_added} chunks added`);
+    document.getElementById('chunks-badge').textContent = `${data.total_chunks} chunks indexed`;
+    addHistory(query, data.ingested_records);
+
+    setTimeout(() => { fill.style.width = '0%'; }, 600);
+  } catch(e) {
+    fill.style.width = '0%';
+    showToast(`Ingestion failed: ${e.message}`, true);
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = '⬆ Ingest Papers';
+  }
+}
+
+function addHistory(query, count) {
+  const list = document.getElementById('history-list');
+  if (list.querySelector('div[style]')) list.innerHTML = '';
+  const item = document.createElement('div');
+  item.className = 'history-item';
+  item.innerHTML = `<div class="history-dot"></div><div class="history-text" title="${query}">${query} (${count})</div>`;
+  list.prepend(item);
+}
+
+// ── Query ──
+async function sendQuery() {
+  if (isLoading) return;
+  const input = document.getElementById('query-input');
+  const query = input.value.trim();
+  if (!query) return;
+
+  // Hide welcome
+  const welcome = document.getElementById('welcome');
+  if (welcome) welcome.remove();
+
+  input.value = '';
+  input.style.height = 'auto';
+  isLoading = true;
+  document.getElementById('send-btn').disabled = true;
+
+  const chat = document.getElementById('chat-area');
+
+  // User message
+  appendMessage('user', query);
+
+  // Loading indicator
+  const loaderId = 'loader-' + Date.now();
+  const loader = document.createElement('div');
+  loader.className = 'loading-msg';
+  loader.id = loaderId;
+  loader.innerHTML = `
+    <div class="msg-avatar" style="background:var(--bg3);border:1px solid var(--border);font-size:13px;">🧬</div>
+    <div class="typing"><span></span><span></span><span></span></div>
+  `;
+  chat.appendChild(loader);
+  chat.scrollTop = chat.scrollHeight;
+
+  try {
+    const r = await fetch(`${API}/query`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({query})
+    });
+
+    document.getElementById(loaderId)?.remove();
+
+    if (!r.ok) throw new Error(`Server error ${r.status}`);
+    const data = await r.json();
+    appendAnswer(data);
+  } catch(e) {
+    document.getElementById(loaderId)?.remove();
+    appendError(e.message);
+  } finally {
+    isLoading = false;
+    document.getElementById('send-btn').disabled = false;
+  }
+}
+
+function appendMessage(role, text) {
+  const chat = document.getElementById('chat-area');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.innerHTML = `
+    <div class="msg-avatar">${role === 'user' ? 'YOU' : '🧬'}</div>
+    <div class="msg-body">
+      <div class="msg-role">${role === 'user' ? 'researcher' : 'biorag'}</div>
+      <div class="msg-text">${escapeHtml(text)}</div>
+    </div>
+  `;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function appendAnswer(data) {
+  const chat = document.getElementById('chat-area');
+  const div = document.createElement('div');
+  div.className = 'msg assistant';
+
+  // Format answer — highlight PMIDs and UniProt accessions
+  let formattedAnswer = escapeHtml(data.answer)
+    .replace(/\[PMID:\s*(\d+)\]/gi, '<span class="cite">PMID:$1</span>')
+    .replace(/\[UniProt:\s*([A-Z0-9]+)\]/gi, '<span class="cite">UniProt:$1</span>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+  // Sources chips
+  const sources = (data.sources || []).slice(0, 8);
+  const sourceChips = sources.map((s, i) => {
+    const label = s.pmid ? `PMID:${s.pmid}` : s.accession ? `UniProt:${s.accession}` : s.source || 'source';
+    const title = s.title ? s.title.substring(0, 60) + '...' : label;
+    return `<span class="source-chip" onclick='showSource(${JSON.stringify(JSON.stringify(s))})' title="${escapeHtml(title)}">${escapeHtml(label)}</span>`;
+  }).join('');
+
+  // Intent tags
+  const intent = data.intent || {};
+  const tags = [];
+  if (data.live_fetch) tags.push('<span class="tag live">⚡ live fetch</span>');
+  else tags.push('<span class="tag kb">📚 knowledge base</span>');
+  if (intent.gene_lookup) tags.push('<span class="tag kb">🧬 gene lookup</span>');
+  if (intent.pathway_query) tags.push('<span class="tag kb">🔬 pathway</span>');
+
+  // Usage
+  const usage = data.usage || {};
+  const tokens = usage.input_tokens ? `${usage.input_tokens}↑ ${usage.output_tokens}↓ tokens` : '';
+
+  div.innerHTML = `
+    <div class="msg-avatar">🧬</div>
+    <div class="msg-body">
+      <div class="msg-role">biorag</div>
+      <div class="answer-card">
+        <div class="answer-content">${formattedAnswer}</div>
+        ${sources.length ? `
+        <div class="sources-bar">
+          <span class="sources-label">Sources</span>
+          ${sourceChips}
+        </div>` : ''}
+        <div class="meta-bar">
+          ${tags.join('')}
+          ${tokens ? `<span class="meta-item" style="margin-left:auto"><span class="val">${tokens}</span></span>` : ''}
+        </div>
+      </div>
+    </div>
+  `;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function appendError(msg) {
+  const chat = document.getElementById('chat-area');
+  const div = document.createElement('div');
+  div.className = 'msg assistant';
+  div.innerHTML = `
+    <div class="msg-avatar">🧬</div>
+    <div class="msg-body">
+      <div class="msg-role">biorag</div>
+      <div class="error-card">⚠ ${escapeHtml(msg)}<br/><br/>Make sure the BioRAG server is running at localhost:8000 and you have ingested some papers first.</div>
+    </div>
+  `;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+// ── Source modal ──
+function showSource(jsonStr) {
+  const s = JSON.parse(jsonStr);
+  const content = document.getElementById('modal-content');
+  const rows = Object.entries(s)
+    .filter(([k, v]) => v && String(v).trim())
+    .map(([k, v]) => `<div class="modal-row"><span class="modal-key">${k}</span><span>${escapeHtml(String(v).substring(0, 300))}</span></div>`)
+    .join('');
+  content.innerHTML = rows || '<div style="color:var(--text3)">No details available.</div>';
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modal-overlay'))
+    document.getElementById('modal-overlay').classList.remove('open');
+}
+
+// ── Utils ──
+function setQuery(text) {
+  const input = document.getElementById('query-input');
+  input.value = text;
+  input.focus();
+  autoResize(input);
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendQuery();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function showToast(msg, isError = false) {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.className = 'toast' + (isError ? ' error' : '');
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
+}
+</script>
+</body>
+</html>
