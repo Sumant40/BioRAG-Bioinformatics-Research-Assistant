@@ -2,7 +2,7 @@
 
 > A production-ready Retrieval-Augmented Generation (RAG) system for bioinformatics research. Query PubMed literature, UniProt protein databases, and KEGG pathways using natural language — powered by an agentic AI pipeline with grounded, cited answers.
 
-![BioRAG Frontend](results\image.png)
+![BioRAG Frontend](results\image.jpeg)
 
 ---
 
