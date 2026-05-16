@@ -1,6 +1,7 @@
 fastapi
 uvicorn[standard]
-chromadb==0.4.24
+chromadb==0.5.23
+numpy==1.26.4
 groq
 biopython
 pypdf
@@ -9,5 +10,5 @@ xmltodict
 rank-bm25
 tiktoken
 python-dotenv
-numpy
 httpx
+pysqlite3-binary
