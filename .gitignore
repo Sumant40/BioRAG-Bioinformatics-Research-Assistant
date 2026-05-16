@@ -10,3 +10,11 @@ __pycache__/
 .ipynb_checkpoints/
 # Ignore data files
 data/
+
+.env
+venv/
+.venv/
+__pycache__/
+*.pyc
+chroma_db/
+*.egg-info/
