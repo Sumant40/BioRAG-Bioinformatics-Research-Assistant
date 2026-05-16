@@ -2,7 +2,6 @@ fastapi
 uvicorn[standard]
 chromadb==0.5.23
 numpy==1.26.4
-tokenizers==0.15.2
 groq
 biopython
 pypdf
