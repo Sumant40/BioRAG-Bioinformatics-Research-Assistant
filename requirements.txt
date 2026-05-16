@@ -1,7 +1,6 @@
 fastapi
-uvicorn
-chromadb
-sentence-transformers
+uvicorn[standard]
+chromadb==0.4.24
 groq
 biopython
 pypdf
@@ -10,4 +9,5 @@ xmltodict
 rank-bm25
 tiktoken
 python-dotenv
+numpy
 httpx
