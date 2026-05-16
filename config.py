@@ -10,7 +10,7 @@ class Config:
     GROQ_API_KEY = os.getenv("GROQ_API_KEY")
     LLM_MODEL = "llama-3.3-70b-versatile"
 
-    EMBEDDING_MODEL = "NeuML/pubmedbert-base-embeddings"
+    EMBEDDING_MODEL = "all-MiniLM-L6-v2"
     EMBEDDING_DIMENSION = 768
 
     # Use /tmp for cloud (ephemeral) or a mounted disk path
